@@ -56,4 +56,15 @@ if (req.method === 'PUT') {
       }
     });
   }
+
+  if (req.method === 'DELETE') {
+    try {
+      await fs.unlink(cachePath);
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('Image deleted');
+    } catch (error) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Image not found');
+    }
+  }
   
