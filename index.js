@@ -1,70 +1,68 @@
-const { Command } = require('commander');
+import http from 'http';
+import fs from 'fs/promises';
+import { Command } from 'commander';
+import superagent from 'superagent';
+import path from 'path';
+
 const program = new Command();
 
 program
-  .option('-h, --host <host>', 'server address', 'localhost')
-  .option('-p, --port <port>', 'server port', 3000)
-  .option('-c, --cache <cache>', 'cache directory', './cache')
-  .requiredOption('-h, --host <host>')
-  .requiredOption('-p, --port <port>')
-  .requiredOption('-c, --cache <cache>');
+  .requiredOption('-h, --host <host>', 'address of the server')
+  .requiredOption('-p, --port <port>', 'port of the server')
+  .requiredOption('-c, --cache <cache>', 'path to the directory for cached files');
 
 program.parse(process.argv);
-const http = require('http');
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Server is running');
-});
+const options = program.opts();
 
-const { host, port } = program.opts();
-server.listen(port, host, () => {
-  console.log(`Server running at http://${host}:${port}/`);
-});
+const startServer = async () => {
+  const server = http.createServer(async (req, res) => {
+    const code = req.url?.substring(1); // Get the code from the URL
+    const cachePath = path.join(options.cache, `${code}.jpg`);
 
-const fs = require('fs').promises;
-const path = require('path');
-
-server.on('request', async (req, res) => {
-  const code = req.url.slice(1); // Отримання коду з URL
-  const cachePath = path.join(program.opts().cache, `${code}.jpg`);
-
-  if (req.method === 'GET') {
-    try {
-      const image = await fs.readFile(cachePath);
-      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-      res.end(image);
-    } catch (error) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Image not found');
+    switch (req.method) {
+      case 'GET':
+        try {
+          const data = await fs.readFile(cachePath);
+          res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+          res.end(data);
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not Found');
+        }
+        break;
+      case 'PUT':
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          await fs.writeFile(cachePath, buffer);
+          res.writeHead(201, { 'Content-Type': 'text/plain' });
+          res.end('Created');
+        });
+        break;
+      case 'DELETE':
+        try {
+          await fs.unlink(cachePath);
+          res.writeHead(200, { 'Content-Type': 'text/plain' });
+          res.end('Deleted');
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not Found');
+        }
+        break;
+      default:
+        res.writeHead(405, { 'Content-Type': 'text/plain' });
+        res.end('Method not allowed');
+        break;
     }
-  }
+  });
+
+  server.listen(options.port, options.host, () => {
+    console.log(`Server running at http://${options.host}:${options.port}/`);
+  });
+};
+
+startServer().catch(err => {
+  console.error(err);
 });
-
-if (req.method === 'PUT') {
-    const data = [];
-    req.on('data', chunk => data.push(chunk));
-    req.on('end', async () => {
-      const imageBuffer = Buffer.concat(data);
-      try {
-        await fs.writeFile(cachePath, imageBuffer);
-        res.writeHead(201, { 'Content-Type': 'text/plain' });
-        res.end('Image saved');
-      } catch (error) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Error saving image');
-      }
-    });
-  }
-
-  if (req.method === 'DELETE') {
-    try {
-      await fs.unlink(cachePath);
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('Image deleted');
-    } catch (error) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Image not found');
-    }
-  }
-  
