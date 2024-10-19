@@ -41,3 +41,19 @@ server.on('request', async (req, res) => {
   }
 });
 
+if (req.method === 'PUT') {
+    const data = [];
+    req.on('data', chunk => data.push(chunk));
+    req.on('end', async () => {
+      const imageBuffer = Buffer.concat(data);
+      try {
+        await fs.writeFile(cachePath, imageBuffer);
+        res.writeHead(201, { 'Content-Type': 'text/plain' });
+        res.end('Image saved');
+      } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Error saving image');
+      }
+    });
+  }
+  
