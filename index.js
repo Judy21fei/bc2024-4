@@ -22,3 +22,22 @@ server.listen(port, host, () => {
   console.log(`Server running at http://${host}:${port}/`);
 });
 
+const fs = require('fs').promises;
+const path = require('path');
+
+server.on('request', async (req, res) => {
+  const code = req.url.slice(1); // Отримання коду з URL
+  const cachePath = path.join(program.opts().cache, `${code}.jpg`);
+
+  if (req.method === 'GET') {
+    try {
+      const image = await fs.readFile(cachePath);
+      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+      res.end(image);
+    } catch (error) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Image not found');
+    }
+  }
+});
+
