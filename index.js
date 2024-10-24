@@ -43,14 +43,14 @@ const requestListener = async function (req, res) {
         case 'PUT':
           const chunks = [];
       
-          //використовуємо масив якщо дані у запиті великі за розміром і їх не можливо отримати за один раз
+   
           req.on('data', chunk => {
               chunks.push(chunk);
           });
       
         
           req.on('end', async () => {
-            //створюємо картинку з фрагментів
+      
               const imageBuffer = Buffer.concat(chunks); 
       
               fs.writeFile(filePath, imageBuffer)
