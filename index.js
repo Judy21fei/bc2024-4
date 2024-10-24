@@ -33,7 +33,7 @@ const requestListener = async function (req, res) {
             res.writeHead(200);
             res.end(content.body);
           } catch (err) {
-            console.log('Запит закінчився помилкою');
+            console.log('Ой, було зловлено помилку');
             console.log(err);
             res.writeHead(404);
             res.end();
@@ -57,12 +57,12 @@ const requestListener = async function (req, res) {
               .then(()=>{
                 res.setHeader("Content-Type", "text/plain");
                   res.writeHead(201);
-                  res.end('Image saved successfully.');
+                  res.end('Картинку завантажено');
               })
               .catch(err=>{
-                console.error('Error saving image:', err);
+                console.error('Помилка із завантаженням картинки:', err);
                 res.writeHead(500);
-                res.end('Error saving image.');
+                res.end('Помилка завантаження картинки');
               })
           });
       
@@ -77,16 +77,16 @@ const requestListener = async function (req, res) {
             .then(()=>{
               res.setHeader("Content-Type", "text/plain");
                   res.writeHead(200);
-                  res.end('Image deleted successfully.');
+                  res.end('Картинку успішно видалено');
             })
             .catch(() =>{
-              console.error('No picture in cache:', filePath);
+              console.error('Жодної картники в кеші:', filePath);
               res.writeHead(404);
               res.end();
             });
             break;
             default:
-              console.error('Wrong method');
+              console.error('Неправильний метод');
               res.writeHead(405);
               res.end();
               break;
