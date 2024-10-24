@@ -92,3 +92,8 @@ const requestListener = async function (req, res) {
               break;
         }
       }
+      const server = http.createServer(requestListener);
+
+      server.listen(options.port, options.host, () => {
+        console.log(`Server is listening on http://${options.host}:${options.port}`);
+      });
